@@ -35,6 +35,8 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
     private TextView text_content;
     private LinearLayout images_layout;
 
+    private int screenWidth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -42,6 +44,7 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
 
         Intent intent = getIntent();
         String newsID = intent.getStringExtra(NewsManager.NEWS_ID);
+        this.screenWidth = intent.getIntExtra(NewsManager.SCREEN_WIDTH, 0);
 
         final NewsDetailActivity newsDetailActivity = this;
         NewsManager.getInstance().loadNewsDetail(newsID, new JsonHolder() {
@@ -95,7 +98,7 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
 
         for (String pic : pictures) {
             final ImageView imageView = new ImageView(images_layout.getContext());
-            final int width = images_layout.getWidth() - 20;
+            final int width = screenWidth - 20;
             final int height = width * 3 / 4;
             imageView.setPadding(10, 10, 10, 10);
             images_layout.addView(imageView);
@@ -107,9 +110,9 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
 //                                    LinearLayout.LayoutParams.MATCH_PARENT,
 //                                    LinearLayout.LayoutParams.WRAP_CONTENT);
 //                            imageView.setLayoutParams(lp);
+                            imageView.setImageBitmap(res);
                             imageView.getLayoutParams().width = width;
                             imageView.getLayoutParams().height = height;
-                            imageView.setImageBitmap(res);
                             imageView.requestLayout();
                         }
                     });

@@ -113,4 +113,8 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
         }
         this.notifyItemInserted(pos);
     }
+
+    void clear() {
+        currentCount = 0;
+    }
 }
