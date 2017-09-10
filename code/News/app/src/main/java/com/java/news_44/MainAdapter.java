@@ -20,6 +20,7 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
 
     private ArrayList<String> arr = new ArrayList<String>();
     private HashMap<View, Integer> map_view_to_position = new HashMap<View, Integer>();
+    private HashMap<View, MainViewHolder> map_view_to_viewholder = new HashMap<>();
 
     private int currentCount = 0;
 
@@ -71,6 +72,10 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
             //snackbar.setAction("Delete", new MyDeleteListener(adapter, id));
             //snackbar.show();
 
+            MainViewHolder v = map_view_to_viewholder.get(view);
+            NewsManager.getInstance().setRead(v.getNewsID());
+            v.setRead();
+
             NewsManager.getInstance().showNewsDetail(id);
         }
     }
@@ -80,7 +85,9 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View view = inflater.inflate(R.layout.main_list_item, parent, false);
         view.setOnClickListener(new MyOnClickListener(this));
-        return new MainViewHolder(view);
+        MainViewHolder v = new MainViewHolder(view);
+        map_view_to_viewholder.put(view, v);
+        return v;
     }
 
     @Override
@@ -94,7 +101,7 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
 
         holder.setNews(NewsManager.getInstance().getNewsFromPosition(position));
 
-        if (getItemCount() - position <= 50) {
+        if (getItemCount() - position <= 50 && !NewsManager.getInstance().is_on_favorites_tab()) {
             NewsManager.getInstance().loadNewsList(getItemCount());
         }
     }
@@ -114,7 +121,21 @@ class MainAdapter extends RecyclerView.Adapter<MainViewHolder> {
         this.notifyItemInserted(pos);
     }
 
+    void remove(int pos) {
+        --currentCount;
+        for (Map.Entry<View, Integer> e : map_view_to_position.entrySet()) {
+            if (e.getValue() > pos) {
+                map_view_to_position.put(e.getKey(), e.getValue() - 1);
+            }
+        }
+        this.notifyItemRemoved(pos);
+    }
+
     void clear() {
         currentCount = 0;
+    }
+
+    void setItemCount(int count) {
+        currentCount = count;
     }
 }

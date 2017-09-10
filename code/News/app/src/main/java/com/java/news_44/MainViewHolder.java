@@ -1,6 +1,8 @@
 package com.java.news_44;
 
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
@@ -26,6 +28,8 @@ class MainViewHolder extends RecyclerView.ViewHolder {
     private int image0_oldwidth;
     private int image0_oldheight;
     private int image0_requestid = 0;
+
+    private String NewsID = "";
 
     MainViewHolder(final View itemView) {
         super(itemView);
@@ -68,6 +72,13 @@ class MainViewHolder extends RecyclerView.ViewHolder {
             });
         }
 
+        this.NewsID = news.getId();
+
+        if (NewsManager.getInstance().isRead(news.getId())) {
+            this.setRead();
+        } else {
+            this.setUnread();
+        }
     }
 
     private String convertTimeString(String time) {
@@ -88,5 +99,21 @@ class MainViewHolder extends RecyclerView.ViewHolder {
         image0Layout.requestLayout();
     }
 
+
+    void setRead() {
+        if (NewsManager.getInstance().is_on_favorites_tab()) {
+            textTitle.setTextColor(Color.BLACK);
+        } else {
+            textTitle.setTextColor(Color.GRAY);
+        }
+    }
+
+    void setUnread() {
+        textTitle.setTextColor(Color.BLACK);
+    }
+
+    String getNewsID() {
+        return NewsID;
+    }
 
 }

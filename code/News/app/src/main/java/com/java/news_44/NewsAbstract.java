@@ -20,6 +20,52 @@ class NewsAbstract implements Comparable<NewsAbstract> {
     private String url = "";
     private int listID = -1;
 
+    public String toString() {
+        JSONObject o = new JSONObject();
+        try {
+            o.put("tag", tag);
+            o.put("author", author);
+            o.put("id", id);
+            o.put("intro", intro);
+
+            String pics = "";
+            if (pictures.length > 0) {
+                pics = pictures[0];
+                for (int i = 1; i < pictures.length; i++) {
+                    pics = pics + " " + pictures[i];
+                }
+            }
+            o.put("pictures", pics);
+
+            o.put("source", source);
+            o.put("time", time);
+            o.put("title", title);
+            o.put("url", url);
+
+        } catch (Exception _) {}
+        return o.toString();
+    }
+
+    static NewsAbstract fromString(String s) {
+        NewsAbstract news = new NewsAbstract();
+        try {
+            JSONObject o = new JSONObject(s);
+            news.tag = o.getString("tag");
+            news.author = o.getString("author");
+            news.id = o.getString("id");
+            news.intro = o.getString("intro");
+            news.pictures = o.getString("pictures").split(" ");
+            news.source = o.getString("source");
+            news.time = o.getString("time");
+            news.title = o.getString("title");
+            news.url = o.getString("url");
+        } catch (Exception _) {}
+
+        return news;
+    }
+
+    private NewsAbstract() {}
+
     NewsAbstract(JSONObject jsonObject, int listID) {
         try {
             this.tag = (String) jsonObject.get("newsClassTag");

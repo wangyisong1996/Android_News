@@ -3,6 +3,7 @@ package com.java.news_44;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.annotation.RequiresPermission;
 import android.util.Log;
 import android.widget.ImageView;
 
@@ -24,10 +25,13 @@ import com.baidu.tts.client.TtsMode;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.PrintWriter;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -102,6 +106,10 @@ class NewsManager {
         this.newsReqQueue = new RequestQueue(newsCache, new BasicNetwork(new HurlStack()));
         this.listReqQueue.start();
         this.newsReqQueue.start();
+
+
+        init_read();
+        init_favorites();
 
 
 
@@ -258,11 +266,20 @@ class NewsManager {
     }
 
     NewsAbstract getNewsFromPosition(int pos) {
-        return newsList.get(pos);
+        if (nav_tab_state == NAV_TAB_FAVORITES) {
+            return favoriteNewsAbstract.get(pos);
+        } else {
+            return newsList.get(pos);
+        }
     }
 
     void loadNewsList(int index) {
         int pageNo = index / pageSize + 1;
+
+        if (nav_tab_state == NAV_TAB_FAVORITES) {
+            // this won't happen
+            return;
+        }
 
         if (loadingPages.contains(pageNo)) {
             return;
@@ -287,14 +304,17 @@ class NewsManager {
         newsReqQueue.add(newImageRequest(url, width, height, scaleType, img));
     }
 
-    static final String NEWS_ID = "com.java.news_44.NEWS_ID";
-    static final String SCREEN_WIDTH = "com.java.news_44.SCREEN_WIDTH";
+    private static final String PACKAGE_NAME = "com.java.news_44";
+    static final String NEWS_ID = PACKAGE_NAME + ".NEWS_ID";
+    static final String SCREEN_WIDTH = PACKAGE_NAME + ".SCREEN_WIDTH";
+    static final String LIST_INDEX = PACKAGE_NAME + ".LIST_INDEX";
 
     void showNewsDetail(int index) {
         NewsAbstract news = this.getNewsFromPosition(index);
         Intent intent = new Intent(this.activity, NewsDetailActivity.class);
         intent.putExtra(NEWS_ID, news.getId());
         intent.putExtra(SCREEN_WIDTH, activity.findViewById(R.id.main_recyclerview).getWidth());
+        intent.putExtra(LIST_INDEX, index);
         activity.startActivity(intent);
     }
 
@@ -334,6 +354,17 @@ class NewsManager {
     void setCurrentCategory(int id) {
         currentCategory = id;
 
+        if (nav_tab_state != NAV_TAB_NEWS) {
+            return;
+        }
+
+        clearNewsLists();
+
+        // load the first item in the list
+        loadNewsList(0);
+    }
+
+    private void clearNewsLists() {
         // clear lists
         this.listReqQueue = Volley.newRequestQueue(activity.getApplicationContext());
         this.newsReqQueue = new RequestQueue(newsCache, new BasicNetwork(new HurlStack()));
@@ -343,7 +374,171 @@ class NewsManager {
         loadingPages = new HashSet<>();
         adapter.clear();
         adapter.notifyDataSetChanged();
+    }
 
+    // read mark
+
+    private HashSet<String> readNews;
+
+    private void init_read() {
+        loadReadState();
+    }
+
+    void setRead(String id) {
+        readNews.add(id);
+
+        saveReadState();
+    }
+
+    boolean isRead(String id) {
+        return readNews.contains(id);
+    }
+
+    private final String ReadStateFilename = "read_state.txt";
+
+    private void saveReadState() {
+        File file = new File(activity.getApplicationContext().getFilesDir(), ReadStateFilename);
+        PrintWriter p;
+        try {
+            p = new PrintWriter(file);
+        } catch (Exception _) {
+            return;
+        }
+        p.println(readNews.size());
+        for (String s : readNews) {
+            p.println(s);
+        }
+        p.close();
+    }
+
+    private void loadReadState() {
+        readNews = new HashSet<>();
+
+        File file = new File(activity.getApplicationContext().getFilesDir(), ReadStateFilename);
+        Scanner s;
+        try {
+            s = new Scanner(file);
+        } catch (Exception _) {
+            return;
+        }
+        int size = Integer.parseInt(s.nextLine());
+        for (int i = 0; i < size; i++) {
+            readNews.add(s.nextLine());
+        }
+    }
+
+    // favorites
+
+    private ArrayList<String> favoriteNews;
+    private ArrayList<NewsAbstract> favoriteNewsAbstract;
+
+    private void init_favorites() {
+        loadFavorites();
+    }
+
+    void setFavorite(String id, NewsAbstract news) {
+        if (favoriteNews.contains(id)) {
+            return;
+        }
+
+        favoriteNews.add(0, id);
+        favoriteNewsAbstract.add(0, news);
+
+        if (nav_tab_state == NAV_TAB_FAVORITES) {
+            adapter.insert(0);
+        }
+
+        saveFavorites();
+    }
+
+    void unsetFavorite(String id) {
+        if (!favoriteNews.contains(id)) {
+            return;
+        }
+
+        int pos = favoriteNews.indexOf(id);
+        favoriteNews.remove(pos);
+        favoriteNewsAbstract.remove(pos);
+
+        if (nav_tab_state == NAV_TAB_FAVORITES) {
+            adapter.remove(pos);
+        }
+
+        saveFavorites();
+    }
+
+    boolean isFavorite(String id) {
+        return favoriteNews.contains(id);
+    }
+
+    private final String FavoritesFilename = "favorites.txt";
+
+    private void saveFavorites() {
+        File file = new File(activity.getApplicationContext().getFilesDir(), FavoritesFilename);
+        PrintWriter p;
+        try {
+            p = new PrintWriter(file);
+        } catch (Exception _) {
+            return;
+        }
+        int size = favoriteNews.size();
+        p.println(size);
+        for (int i = 0; i < size; i++) {
+            p.println(favoriteNews.get(i));
+            p.println(favoriteNewsAbstract.get(i).toString());
+        }
+        p.close();
+    }
+
+    private void loadFavorites() {
+        favoriteNews = new ArrayList<>();
+        favoriteNewsAbstract = new ArrayList<>();
+
+        File file = new File(activity.getApplicationContext().getFilesDir(), FavoritesFilename);
+        Scanner s;
+        try {
+            s = new Scanner(file);
+        } catch (Exception _) {
+            return;
+        }
+        int size = Integer.parseInt(s.nextLine());
+        for (int i = 0; i < size; i++) {
+            favoriteNews.add(s.nextLine());
+            favoriteNewsAbstract.add(NewsAbstract.fromString(s.nextLine()));
+        }
+    }
+
+    // fav list
+
+    private final int NAV_TAB_NEWS = 1;
+    private final int NAV_TAB_FAVORITES = 2;
+
+    private int nav_tab_state = NAV_TAB_NEWS;
+
+    void set_nav_news() {
+        if (nav_tab_state == NAV_TAB_NEWS) {
+            return;
+        }
+
+        nav_tab_state = NAV_TAB_NEWS;
+        clearNewsLists();
         loadNewsList(0);
     }
+
+    void set_nav_favorites() {
+        if (nav_tab_state == NAV_TAB_FAVORITES) {
+            return;
+        }
+
+        nav_tab_state = NAV_TAB_FAVORITES;
+        clearNewsLists();
+        adapter.setItemCount(favoriteNewsAbstract.size());
+        adapter.notifyDataSetChanged();
+    }
+
+    boolean is_on_favorites_tab() {
+        return nav_tab_state == NAV_TAB_FAVORITES;
+    }
+
+
 }

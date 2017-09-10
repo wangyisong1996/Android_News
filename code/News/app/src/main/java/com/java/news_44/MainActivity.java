@@ -17,7 +17,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.util.TreeMap;
@@ -142,6 +144,8 @@ public class MainActivity extends AppCompatActivity
         return super.onOptionsItemSelected(item);
     }
 
+    private int main_category_scroll_height = -1;
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -151,7 +155,25 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_settings) {
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivity(intent);
-        } else if (id == R.id.nav_about) {
+            return true;
+        } else if (id == R.id.nav_favorites) {
+            getSupportActionBar().setTitle("收藏");
+            NewsManager.getInstance().set_nav_favorites();
+
+            HorizontalScrollView v = (HorizontalScrollView) findViewById(R.id.main_category_scroll);
+            if (main_category_scroll_height == -1) main_category_scroll_height = v.getLayoutParams().height;
+            v.getLayoutParams().height = 0;
+            v.setVisibility(View.INVISIBLE);
+            v.requestLayout();
+
+        } else if (id == R.id.nav_all_news) {
+            getSupportActionBar().setTitle("新闻");
+            NewsManager.getInstance().set_nav_news();
+
+            HorizontalScrollView v = (HorizontalScrollView) findViewById(R.id.main_category_scroll);
+            v.getLayoutParams().height = main_category_scroll_height;
+            v.setVisibility(View.VISIBLE);
+            v.requestLayout();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);

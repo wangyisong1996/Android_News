@@ -2,6 +2,7 @@ package com.java.news_44;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -37,17 +38,21 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
 
     private int screenWidth;
 
+    private String NewsID = "";
+
+    private NewsAbstract news;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news_detail);
 
         Intent intent = getIntent();
-        String newsID = intent.getStringExtra(NewsManager.NEWS_ID);
+        NewsID = intent.getStringExtra(NewsManager.NEWS_ID);
         this.screenWidth = intent.getIntExtra(NewsManager.SCREEN_WIDTH, 0);
 
         final NewsDetailActivity newsDetailActivity = this;
-        NewsManager.getInstance().loadNewsDetail(newsID, new JsonHolder() {
+        NewsManager.getInstance().loadNewsDetail(NewsID, new JsonHolder() {
             @Override
             public void onLoad(JSONObject obj) {
                 newsDetailActivity.load(obj);
@@ -56,6 +61,16 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
 
         ActionBar ab = getSupportActionBar();
         if (ab != null) ab.setTitle("新闻详情");
+
+        int index = intent.getIntExtra(NewsManager.LIST_INDEX, 0);
+        news = NewsManager.getInstance().getNewsFromPosition(index);
+
+
+        if (NewsManager.getInstance().isFavorite(NewsID)) {
+            this.setFavorite();
+        } else {
+            this.unsetFavorite();
+        }
     }
 
     private void load(JSONObject obj) {
@@ -132,9 +147,33 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
         return ret;
     }
 
+    private boolean isFavorite = false;
+
+    private void setFavorite() {
+        isFavorite = true;
+        if (menu_favorite != null) {
+            menu_favorite.setIcon(R.drawable.ic_favorite_white_24dp);
+        }
+    }
+
+    private void unsetFavorite() {
+        isFavorite = false;
+        if (menu_favorite != null) {
+            menu_favorite.setIcon(R.drawable.ic_favorite_border_white_24dp);
+        }
+    }
+
+    MenuItem menu_favorite = null;
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.detail, menu);
+
+        menu_favorite = menu.getItem(1);
+        if (isFavorite) {
+            menu_favorite.setIcon(R.drawable.ic_favorite_white_24dp);
+        }
+
         return true;
     }
 
@@ -145,6 +184,18 @@ public class NewsDetailActivity extends AppCompatActivity implements SpeechSynth
         if (id == R.id.action_detail_speak) {
             speak(this.title + "。\n" + this.content);
             return true;
+        } else if (id == R.id.action_detail_favorite) {
+            if (!isFavorite) {
+                this.setFavorite();
+                NewsManager.getInstance().setFavorite(NewsID, news);
+
+                Snackbar.make(this.findViewById(R.id.detail_scrollview), "已收藏", Snackbar.LENGTH_LONG).show();
+            } else {
+                this.unsetFavorite();
+                NewsManager.getInstance().unsetFavorite(NewsID);
+
+                Snackbar.make(this.findViewById(R.id.detail_scrollview), "已取消收藏", Snackbar.LENGTH_LONG).show();
+            }
         }
 
         return super.onOptionsItemSelected(item);
