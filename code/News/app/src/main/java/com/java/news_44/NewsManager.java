@@ -27,6 +27,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.PrintWriter;
+import java.net.URLEncoder;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -183,7 +184,14 @@ class NewsManager {
     }
 
     private JsonObjectRequest newListRequest(int pageNo, int category) {
-        String url = baseURL + "/action/query/latest?pageNo=" + pageNo + "&pageSize=" + pageSize + "&category=" + category;
+        String url = "";
+        if (!SearchKeyword.equals("")) {
+            try {
+                url = baseURL + "/action/query/search?keyword=" + URLEncoder.encode(SearchKeyword, "UTF-8") + "&pageNo=" + pageNo + "&pageSize=" + pageSize + "&category=" + category;
+            } catch (Exception _) {}
+        } else {
+            url = baseURL + "/action/query/latest?pageNo=" + pageNo + "&pageSize=" + pageSize + "&category=" + category;
+        }
         return new JsonObjectRequest(Request.Method.GET,
                 url,
                 null,
@@ -540,5 +548,17 @@ class NewsManager {
         return nav_tab_state == NAV_TAB_FAVORITES;
     }
 
+    // search
+
+    private String SearchKeyword = "";
+
+    void setSearchKeyword(String keyword) {
+        SearchKeyword = keyword;
+    }
+
+    void refreshNewsLists() {
+        clearNewsLists();
+        loadNewsList(0);
+    }
 
 }

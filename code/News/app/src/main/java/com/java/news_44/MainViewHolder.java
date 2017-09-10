@@ -81,8 +81,24 @@ class MainViewHolder extends RecyclerView.ViewHolder {
         }
     }
 
+    private int parseInt(String s, int def) {
+        try {
+            return Integer.parseInt(s);
+        } catch (Exception _) {
+            return def;
+        }
+    }
+
+    private int parseInt(String s, int l, int r, int def) {
+        try {
+            return parseInt(s.substring(l, r), def);
+        } catch (Exception _) {
+            return def;
+        }
+    }
+
     private String convertTimeString(String time) {
-        return Integer.parseInt(time.substring(0, 4)) + "年" + Integer.parseInt(time.substring(4, 6)) + "月" + Integer.parseInt(time.substring(6, 8)) + "日";
+        return parseInt(time, 0, 4, 1970) + "年" + parseInt(time, 4, 6, 1) + "月" + parseInt(time, 6, 8, 1) + "日";
     }
 
     private void setNoImage() {
