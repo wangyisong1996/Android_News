@@ -3,6 +3,7 @@ package com.java.news_44;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.support.annotation.MainThread;
 import android.support.annotation.RequiresPermission;
 import android.util.Log;
 import android.widget.ImageView;
@@ -53,14 +54,14 @@ class NewsManager {
 
     private RequestQueue listReqQueue, newsReqQueue;
 
-    private Activity activity;
+    private MainActivity activity;
     private MainAdapter adapter;
 
     private ArrayList<NewsAbstract> newsList = new ArrayList<>();
 
     private HashSet<Integer> loadingPages = new HashSet<>();
 
-    void setActivity(Activity activity) {
+    void setActivity(MainActivity activity) {
         this.activity = activity;
     }
 
@@ -113,6 +114,7 @@ class NewsManager {
         init_read();
         init_favorites();
         load_text_mode();
+        loadCategoryEnabled();
 
 
 
@@ -608,6 +610,70 @@ class NewsManager {
 
         int x = s.nextInt();
         text_mode = x == 1;
+    }
+
+    // settings/categories
+
+    TreeMap<Integer, Boolean> CategoryEnabled;
+
+    boolean getCategoryEnabled(int id) {
+        if (!CategoryEnabled.containsKey(id)) {
+            CategoryEnabled.put(id, true);
+        }
+        return CategoryEnabled.get(id);
+    }
+
+    void setCategoryEnabled(int id, boolean b) {
+        CategoryEnabled.put(id, b);
+
+        if (id == currentCategory && !b) {
+            activity.onCategoryClicked(-1);
+        }
+
+        activity.setCategoryEnabled(id, b);
+
+        saveCategoryEnabled();
+    }
+
+    private final String CategoryEnabledFilename = "category_settings.txt";
+
+    private void saveCategoryEnabled() {
+        File file = new File(activity.getApplicationContext().getFilesDir(), CategoryEnabledFilename);
+        PrintWriter p;
+        try {
+            p = new PrintWriter(file);
+        } catch (Exception _) {
+            return;
+        }
+
+        p.println(CategoryEnabled.size());
+
+        for (TreeMap.Entry<Integer, Boolean> e : CategoryEnabled.entrySet()) {
+            p.println(e.getKey());
+            p.println(e.getValue() ? 1 : 0);
+        }
+
+        p.close();
+    }
+
+    private void loadCategoryEnabled() {
+        CategoryEnabled = new TreeMap<>();
+
+        File file = new File(activity.getApplicationContext().getFilesDir(), CategoryEnabledFilename);
+        Scanner s;
+        try {
+            s = new Scanner(file);
+        } catch (Exception _) {
+            return;
+        }
+
+        int n = s.nextInt();
+
+        for (int i = 0; i < n; i++) {
+            int id = s.nextInt();
+            int b = s.nextInt();
+            CategoryEnabled.put(id, b == 1);
+        }
     }
 
 }

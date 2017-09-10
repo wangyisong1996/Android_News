@@ -103,7 +103,9 @@ public class MainActivity extends AppCompatActivity
             textView.setText(name);
             textView.setOnClickListener(listener);
             tabs_layout.addView(textView);
-            map_category_id_to_view.put(newsManager.getCategoryIDFromName(name), textView);
+            int id = newsManager.getCategoryIDFromName(name);
+            map_category_id_to_view.put(id, textView);
+            this.setCategoryEnabled(id, newsManager.getCategoryEnabled(id));
         }
         tabs_layout.requestLayout();
 
@@ -173,6 +175,10 @@ public class MainActivity extends AppCompatActivity
         now_view.setTextColor(Color.RED);
 
         NewsManager.getInstance().setCurrentCategory(id);
+    }
+
+    void setCategoryEnabled(int id, boolean b) {
+        map_category_id_to_view.get(id).setVisibility(b ? View.VISIBLE : View.GONE);
     }
 
     @Override
