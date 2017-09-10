@@ -24,6 +24,7 @@ import com.baidu.tts.client.TtsMode;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -111,6 +112,7 @@ class NewsManager {
 
         init_read();
         init_favorites();
+        load_text_mode();
 
 
 
@@ -309,6 +311,8 @@ class NewsManager {
     }
 
     void loadImage(String url, int width, int height, ImageView.ScaleType scaleType, ImageHolder img) {
+        if (is_text_mode()) return;
+
         newsReqQueue.add(newImageRequest(url, width, height, scaleType, img));
     }
 
@@ -559,6 +563,51 @@ class NewsManager {
     void refreshNewsLists() {
         clearNewsLists();
         loadNewsList(0);
+    }
+
+    // settings/text_mode
+
+    private boolean text_mode = false;
+
+    boolean is_text_mode() {
+        return text_mode;
+    }
+
+    void set_text_mode(boolean f) {
+        text_mode = f;
+        save_text_mode();
+        adapter.notifyDataSetChanged();  // refresh
+    }
+
+    private final String TextModeFileName = "text_mode.txt";
+
+    private void save_text_mode() {
+        File file = new File(activity.getApplicationContext().getFilesDir(), TextModeFileName);
+        PrintWriter p;
+        try {
+            p = new PrintWriter(file);
+        } catch (Exception _) {
+            return;
+        }
+
+        p.println(text_mode ? 1 : 0);
+
+        p.close();
+    }
+
+    private void load_text_mode() {
+        text_mode = false;
+
+        File file = new File(activity.getApplicationContext().getFilesDir(), TextModeFileName);
+        Scanner s;
+        try {
+            s = new Scanner(file);
+        } catch (Exception _) {
+            return;
+        }
+
+        int x = s.nextInt();
+        text_mode = x == 1;
     }
 
 }
